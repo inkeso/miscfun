@@ -1,0 +1,9 @@
+- more docu for ppbar
+
+README
+------
+
+- Almost each sourcefile works independently from the package via 'source'
+- There are no data-objects, only functions and setRefClass
+- documentation is inlined, see build.r (using roxygen2 here)
+- additional packages are loaded on first use
