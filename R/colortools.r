@@ -56,3 +56,4 @@ pheat.colors <- function(n) {
 }
 
 # see also: viridisLite, dichromat, GetTolColors, alle_farben.html
+# und jetzt neu: hcl.colors und hcl.pals

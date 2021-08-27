@@ -8,4 +8,6 @@ list2table(x)
 }
 \description{
 create a table from a list of vectors (even with different lengths)
+each list in one column, simply side by side, preserving vector-ordering
+(so row-association is meaningless)
 }

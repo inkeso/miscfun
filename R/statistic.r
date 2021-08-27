@@ -276,12 +276,10 @@ plot.sunbeam <- function(x, ...) {
     nall = length(c(x$detected, x$notdetected))
     mtit=paste("Specific Peptides in ", ndet, " of ", nall,
                " (", round(ndet/nall*100, digits=1), "%) ",
-               "Patients", sep="")
+                "Patients", sep="")
 
-
-    heatmap.2(x$resultmatrix, col=rev(gray.colors(3)),
-              trace="none",scale="none",key=F,dendrogram="none",Colv=F,Rowv=F,
-              keysize=0.6, main=mtit, margins=c(5,8), ...)
+    pheatmap(x$resultmatrix, col=rev(gray.colors(3)),
+              cluster_rows=F,cluster_cols=F, legend=F, main=mtit, ...)
 }
 
 #' logttest

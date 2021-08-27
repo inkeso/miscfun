@@ -4,10 +4,19 @@
 \alias{read}
 \title{read}
 \usage{
-read(input, sheet = 1, data.table = F, ...)
+read(input, data.table = F, ...)
+}
+\arguments{
+\item{input}{Filename to read. May start with 'http:/', 'https://' or 'ftp://'. 
+If the file is a (compressed) textfile it will be downloaded, decompressed and read on-the-fly without using tempfiles.
+If it's an xlsx-workbook, it will be downloaded to a tempfile, then read.}
+
+\item{data.table}{set to TRUE to return a data.table instead of data.frame}
 }
 \description{
 automagically read tables to data.frame or data.table.
-Can read from textfiles (csv), even compressed (bz2, xz, gzip), excel-files.
+Can read textfiles (csv) and compressed textfiles (bz2, xz, gzip) (using data.table::fread)
+Can also read xlsx-workbooks (using openxlsx::read.xlsx).
 Will read directly from http(s), ftp.
+Download and decompression is done via pipes, not temporary files (except for xlsx-workbooks).
 }

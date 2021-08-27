@@ -8,6 +8,6 @@ Maintainer: Felix Steinbeck <felix.steinbeck@uni-rostock.de>
 Description: Some convenient functions and imports
 License: WTF-1.0
 NeedsCompilation: no
-Suggests: Biostrings, dichromat, tcltk, RColorBrewer, gdata, data.table, parallel, future, digest
+Suggests: Biostrings, dichromat, tcltk, RColorBrewer, gdata, data.table, parallel, future, digest, fst
 Encoding: UTF-8
-RoxygenNote: 6.1.0
+RoxygenNote: 7.1.0

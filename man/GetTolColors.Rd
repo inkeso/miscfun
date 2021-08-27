@@ -4,8 +4,17 @@
 \alias{GetTolColors}
 \title{Paul Tol's Color Schemes}
 \usage{
-GetTolColors(n, scheme = "smooth rainbow", alpha = NULL, start = 0,
-  end = 1, bias = 1, reverse = FALSE, blind = NULL, gray = FALSE)
+GetTolColors(
+  n,
+  scheme = "smooth rainbow",
+  alpha = NULL,
+  start = 0,
+  end = 1,
+  bias = 1,
+  reverse = FALSE,
+  blind = NULL,
+  gray = FALSE
+)
 }
 \arguments{
 \item{n}{'integer'.

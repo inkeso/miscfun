@@ -202,7 +202,9 @@
 #'   width of prgressbar(s). Default is terminal-width as determined by tput
 #' @param type
 #'   one of 'txt', 'simple', 'small', 'pretty', 'plot', 'tk'
-#' @export
+#'
+#' @export ppbar
+#' @exportClass ppbar
 ppbar <- setRefClass("ppbar",
     fields=c("maxval", "width", "type", "starttime", "current", "info", "plotfun", "lastupd"),
     # "maxval", "current" may be vectors
@@ -254,37 +256,11 @@ ppbar <- setRefClass("ppbar",
 plapply <- function(X, FUN, ..., mc.cores = getOption("mc.cores", 4L),
                        max.vector.size = getOption("max.vector.size", 1024L),
                        mc.progress="simple") {
-    require(parallel)
-    require(future)
-    # Set up maximun global size for the future package
-    options(future.globals.maxSize=max.vector.size*1024^2)
-    # Set up plan
-    originalPlan <- plan("list")
-    on.exit(plan(originalPlan))
-    plan(multiprocess)
-  
+
     if (!is.vector(X) || is.object(X)) X <- as.list(X)
     stopifnot(length(X) > 0)
-  
-    progressFifo <- fifo(tempfile(), open="w+b", blocking=T)
-    on.exit(close(progressFifo), add=T)
-  
-    progressMonitor <- futureCall(function(X, FUN, ..., mc.cores) {
-        # Get results
-        result <- mclapply(X, function(...) {
-            res <- FUN(...)
-            writeBin(1L, progressFifo)
-            return(res)
-        }, ..., mc.cores = mc.cores)
-        # Check if any error was triggered
-        if ("try-error" %in% sapply(result, class)) {
-            # Warn the progress monitor if there's an error
-            writeBin(-1L, progressFifo)
-        }
-        close(progressFifo)
-        return(result)
-    }, globals=list(progressFifo=progressFifo), args=list(X, FUN, ..., mc.cores=mc.cores))
-
+    
+    # prepare progressbars
     if ("character" %in% is(mc.progress)) {
         mc.progress <- ppbar(length(X), type=mc.progress)
     } else if ("list" %in% is(mc.progress) && length(mc.progress)>=2) {
@@ -296,31 +272,74 @@ plapply <- function(X, FUN, ..., mc.cores = getOption("mc.cores", 4L),
         stop("mc.progress must be character or list of length 2: c(ppbar, slot)")
     }
     
-    progress <- 0
-    hasError <- F
-    while (progress < length(X)) {
-        progressUpdate <- readBin(progressFifo, "integer", n=100)
-        # Check if any warning or error in the update
-        if (any(progressUpdate == -1)) {
-            hasError <- T
-            break()
-        }
-        progress <- progress + sum(progressUpdate)
+    updateprogress <- function(full, incr) {
         if (length(mc.progress) >= 2) {
-            mc.progress[[1]]$current[mc.progress[[2]]] <- progress
+            mc.progress[[1]]$current[mc.progress[[2]]] <- full + incr
             if ("add" %in% names(mc.progress)) {
-                cadd <- mc.progress[[1]]$current[mc.progress[["add"]]] + sum(progressUpdate)
+                cadd <- mc.progress[[1]]$current[mc.progress[["add"]]] + incr
                 mc.progress[[1]]$current[mc.progress[["add"]]] <- cadd
             }
             mc.progress[[1]]$update(NULL)
         } else {
-            mc.progress$update(progress)
+            mc.progress$update(full + incr)
         }
+        return(full + incr)
     }
     
-    # Retrieve the result from the future
-    results <- value(progressMonitor)
-    if (hasError) warning("scheduled cores encountered error(s)")
+    if (mc.cores > 1) { # real multicore
+        require(parallel)
+        require(future)
+        # Set up maximun global size for the future package
+        options(future.globals.maxSize=max.vector.size*1024^2)
+        # Set up plan
+        originalPlan <- plan("list")
+        on.exit(plan(originalPlan))
+        # plan(multiprocess)  # deprecated
+        plan(multicore)
+
+        progressFifo <- fifo(tempfile(), open="w+b", blocking=T)
+        on.exit(close(progressFifo), add=T)
+      
+        progressMonitor <- futureCall(function(X, FUN, ..., mc.cores) {
+            # Get results
+            result <- mclapply(X, function(...) {
+                res <- FUN(...)
+                writeBin(1L, progressFifo)
+                return(res)
+            }, ..., mc.cores = mc.cores)
+            # Check if any error was triggered
+            if ("try-error" %in% sapply(result, class)) {
+                # Warn the progress monitor if there's an error
+                writeBin(-1L, progressFifo)
+            }
+            close(progressFifo)
+            return(result)
+        }, globals=list(progressFifo=progressFifo), args=list(X, FUN, ..., mc.cores=mc.cores))
+        
+        progress <- 0
+        hasError <- F
+        while (progress < length(X)) {
+            progressUpdate <- readBin(progressFifo, "integer", n=100)
+            # Check if any warning or error in the update
+            if (any(progressUpdate == -1)) {
+                hasError <- T
+                break()
+            }
+            progress <- updateprogress(progress, sum(progressUpdate))
+        }
+        
+        # Retrieve the result from the future
+        results <- value(progressMonitor)
+        if (hasError) warning("scheduled cores encountered error(s)")
+    } else {
+        # for single-core we don't spawn anything and just interate
+        results <- list()
+        items <- if(is.null(names(X))) 1:length(X) else names(X)
+        for (i in 1:length(X)) {
+            results[[items[i]]] <- FUN(X[[i]])
+            updateprogress(i,0)
+        }
+    }
     return(results)
 }
 

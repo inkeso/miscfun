@@ -4,9 +4,14 @@
 \alias{plapply}
 \title{plapply}
 \usage{
-plapply(X, FUN, ..., mc.cores = getOption("mc.cores", 4L),
+plapply(
+  X,
+  FUN,
+  ...,
+  mc.cores = getOption("mc.cores", 4L),
   max.vector.size = getOption("max.vector.size", 1024L),
-  mc.progress = "simple")
+  mc.progress = "simple"
+)
 }
 \description{
 lapply & sapply für multicor mit automatischer (pretty)progress-bar.

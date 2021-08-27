@@ -42,15 +42,19 @@
     } else {
         pwd <- getwd()
     }
-    if (nchar(pwd) > (getOption("width") / 2)) {
-        pwd <- sub("^[^/]*", "…", substr(pwd, nchar(pwd)-(getOption("width") / 2)-2, nchar(pwd)))
+    # if (nchar(pwd) > (getOption("width") / 2)) {
+    #     pwd <- sub("^[^/]*", "…", substr(pwd, nchar(pwd)-(getOption("width") / 2)-2, nchar(pwd)))
+    # }
+    pwd_comp <- unlist(strsplit(pwd, "/"))
+    if (length(pwd_comp) > 4) {
+        pwd <- paste(c(pwd_comp[1], "…", rev(pwd_comp)[3:1]), collapse="/")
     }
     prlen <- nchar(sprintf("--OK -%s-[%s]-[%d / %.1f MB]", res, pwd, obj, mem/1024))
     fillr <- if (prlen > 0) paste(rep("┈", getOption("width") - prlen), collapse="") else ""
     row1 <- sprintf(
         "\033[90m┌─%s\033[90m─\033[38;5;31m%s\033[90m─%s[\033[35m%s\033[90m]─[\033[33m%d\033[90m / \033[96m%.1f MB\033[90m]",
         status, res, fillr, pwd, obj, mem/1024)
-    system(sprintf('[[ -n "$TMUX" ]] && tmux rename-window -t${TMUX_PANE} "R: %s"', pwd))
+    system(sprintf('[ -n "$TMUX" ] && tmux rename-window -t${TMUX_PANE} "R: %s"', pwd))
     paste0(row1, "\033[0m\n▶ ")
 }
 
