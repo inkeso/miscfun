@@ -10,4 +10,4 @@ License: WTF-1.0
 NeedsCompilation: no
 Suggests: Biostrings, dichromat, tcltk, RColorBrewer, gdata, data.table, parallel, future, digest, fst
 Encoding: UTF-8
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
