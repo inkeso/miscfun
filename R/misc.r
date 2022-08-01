@@ -1,45 +1,98 @@
-#' captio
+#' caption
 #'
-#' display string as caption (underlined)
+#' display string as caption (maybe underlined)
+#'
+#' @param txt
+#'   Text to display as caption.
+#'
+#' @param color
+#'   ANSI color code for caption.
+#'
+#' @param ulchar
+#'   Character for underlining caption.
+#'   Should be exactly 1 character or "" or NULL or NA for no underline.
+#'
+#' @param ulcolor
+#'   ANSI color code for underline.
+#'
 #' @export
 caption <- function(txt, color="1;37", ulchar="▔", ulcolor="31") {
     txt <- gsub("(^\\s+)|(\\s+$)", "", txt)
-    cat("\033[",color,"m",txt,"\033[0m\n",sep="")
+    cat("\033[",color,"m",txt,"\033[22;39m\n",sep="")
     if (!(is.null(ulchar) || is.na(ulchar) || (nchar(ulchar) == 0)))
-        cat("\033[",ulcolor,"m",rep(ulchar,nchar(txt)),"\033[0m\n",sep="")
+        cat("\033[",ulcolor,"m",rep(ulchar,nchar(txt)),"\033[39m\n",sep="")
+}
+
+#' cls
+#'
+#' clear screen (including scrollback buffer (as opposed to Ctrl-L))
+#'
+#' @param hard
+#'   if TRUE, a full reset is performed. Usefull if something has messed up your terminal.
+#'
+#' @export
+cls <- function(hard=F) {
+    system(if (hard) "reset" else "clear")
 }
 
 #' lf
 #'
-#' List content of current workspace
+#' List content of current global environment
+#'
+#' @param withsize
+#'   If TRUE, approximate size of each object in memory is displayed.
+#'   Be aware that this may take some time and create overhead in RAM if there
+#'   are large objects in the global environment.
+#'
 #' @export
-lf <- function() {
-    #suppressPackageStartupMessages(require(gdata))
-    dat <- gdata::ll(".GlobalEnv",digits=1, dim=T, sort=T)
+lf <- function(withsize=FALSE) {
+    if (withsize) {
+        # This may be very slow and create lots of overhead in RAM
+        dat <- gdata::ll(".GlobalEnv",digits=1, dim=T, sort=T)
+    } else {
+        obj <- ls(envir=globalenv())
+        if (length(obj) > 0) {
+            dat <- data.frame(
+                row.names=obj,
+                Class=sapply(obj, \(.){ class(get(.))[1] }),
+                KB=NA,
+                Dim=sapply(obj, \(.){
+                    d <- dim(get(.))
+                    if (is.null(d)) d <- length(get(.))
+                    paste(d, collapse=" x ")
+                })
+            )
+        } else {
+            dat <- data.frame()
+        }
+    }
     dat_fn <- dat[dat$Class=="function",]
     dat_dt <- dat[dat$Class!="function" & rownames(dat)!="ppbarenv",]
     if (nrow(dat_fn) > 0) {
         caption("Functions", ulcolor=32)
         for (item in rownames(dat_fn)) {
             if (is.function(get(item))) {
-                para=gsub("^function \\(|\\)  $","",capture.output(str(get(item), give.attr=F)))
-                cat("\033[32m",item,"\033[m(\033[33m",para,"\033[m)\n", sep="")
+                para <- gsub("^function \\(|\\)  $","",capture.output(str(get(item), give.attr=F)))
+                #    neu = function(z, y=list(),a="b , f", c=17, d=matrix(), æ){}
+                # testcase fails and it's a bit inconsistent but it's better than nothing.
+                para <- gsub("([^ ,]+)(,| = ([^ ]+))? ", "\033[97m\\1\033[33m\\2 ", para)
+                cat("\033[92m",item,"\033[39m(\033[33m",para,"\033[39m)\n", sep="")
             }
         }
         cat("\n")
     }
     if (nrow(dat_dt) > 0) {
         caption("Data",ulcolor=32)
-        dcl = capture.output(print(dat_dt[,c(1,3,2)]))
+        dcl <- capture.output(print(dat_dt[, if (withsize) c(1,3,2) else c(1,3)]))
         # highlight!
-        dcl <- sub("^([^ ]+) ", "@97m\\1@0m ", dcl) # all names
-        dcl[1] <- paste("@97m",dcl[1],"@0m", sep="") # heading
-        dcl <- sub(" (data.(frame|table)|matrix|array) ", " @36m\\1@0m ",dcl)
-        dcl <- sub(" (list) ",                            " @34m\\1@0m ",dcl)
-        dcl <- sub(" (environment) ",                     " @31m\\1@0m ",dcl)
-        dcl <- sub(" (numeric|character|logical) ",       " @33m\\1@0m ",dcl)
-        dcl <- sub(" (factor) ",                          " @1;33m\\1@0m ",dcl)
-        cat(gsub("@","\033[",dcl),sep="\n")
+        dcl <- sub("^([^ ]+) ", "\033[97m\\1\033[39m ", dcl) # all names
+        dcl[1] <- paste("\033[97m",dcl[1],"\033[39m", sep="") # heading
+        dcl <- sub(" (data.(frame|table)|matrix|array) ", " \033[36m\\1\033[39m ",dcl)
+        dcl <- sub(" (list) ",                            " \033[35m\\1\033[39m ",dcl)
+        dcl <- sub(" (environment) ",                     " \033[31m\\1\033[39m ",dcl)
+        dcl <- sub(" (numeric|character|logical) ",       " \033[33m\\1\033[39m ",dcl)
+        dcl <- sub(" (factor) ",                          " \033[1;33m\\1\033[39m ",dcl)
+        cat(dcl,sep="\n")
     }
 }
 
@@ -67,9 +120,9 @@ rc <- function() {
 #' Can also read xlsx-workbooks (using openxlsx::read.xlsx).
 #' Will read directly from http(s), ftp.
 #' Download and decompression is done via pipes, not temporary files (except for xlsx-workbooks).
-#' 
+#'
 #' @param input
-#'   Filename to read. May start with 'http:/', 'https://' or 'ftp://'. 
+#'   Filename to read. May start with 'http:/', 'https://' or 'ftp://'.
 #'   If the file is a (compressed) textfile it will be downloaded, decompressed and read on-the-fly without using tempfiles.
 #'   If it's an xlsx-workbook, it will be downloaded to a tempfile, then read.
 #'
@@ -149,6 +202,13 @@ read <- function(input, data.table=T, ...) {
 #' read.fasta
 #'
 #' read FASTA-File
+#'
+#' @param file
+#'   file to read
+#'
+#' @param to.upper
+#'   convert everthing in input to upper case
+#'
 #' @export
 read.fasta <- function (file, to.upper=FALSE) {
     raw.fa <- scan(file, what=character(0), sep="\n", quiet=TRUE)
@@ -177,12 +237,16 @@ read.fasta <- function (file, to.upper=FALSE) {
 #'
 #' @param sq
 #'   Sequences to be exported. They need names.
+#'
 #' @param file
 #'   Write to this file.
+#'
 #' @param wrap
 #'   Wrap sequence (not names) after this many chars
+#'
 #' @param to.upper
 #'   If TRUE, sequences will be converted to uppercase
+#'
 #' @export
 write.fasta <- function (sq, file, wrap=80, to.upper=FALSE) {
     stopifnot(!is.null(names(sq)))
@@ -195,24 +259,33 @@ write.fasta <- function (sq, file, wrap=80, to.upper=FALSE) {
 #'
 #' export (and show) something as excel-file.
 #' @param mat
-#'   This may be a single object (anything that may be coerced to matrix). It will be exportet as a single-sheet-XLS.
-#'   Or it may be an environment. In this case, every object will be exportet as a single sheet in the resulting XLS.
+#'   This may be:
+#'    - a single object (anything that may be coerced to a data frame). It will be exportet as a single-sheet-XLSX.
+#'    - an environment or list. Every object in the list which can be coerced to a data.frame will be exportet as a single sheet in the resulting XLSX.
+#'
 #' @param filename
 #'   Write to this file. If 'NA', it will be a tempfile() and directly opend in localc.
+#'
 #' @export
 showxls <- function(mat, filename=NA) {
     fina <- ifelse(is.character(filename), filename, paste(tempfile(),".xlsx",sep=""))
     require(openxlsx)
-    if (is.environment(mat)) {
+    if (is.data.frame(mat)) {
+        framename <- make.unique(substr(gsub("[^A-Za-z0-9_-]","_", match.call()[2]),1,30))
+    } else if (is.matrix(mat)) {
+        mat <- as.data.frame(mat)
+        framename <- make.unique(substr(gsub("[^A-Za-z0-9_-]","_", match.call()[2]),1,30))
+    } else if (is.environment(mat) || is.list(mat)) {
         mat <- as.list(mat)
+        framename <- names(mat)
+        framename[nchar(framename) == 0] <- "Sheet"
+        framename <- make.unique(framename)
+        names(mat) <- framename
+        framename <- NULL
         # filter functions
         mat <- mat[!sapply(mat, function(x) any(c("refObject", "function") %in% is(x)))]
-        mat <- lapply(mat, function(x) if(is.null(dim(x))) as.matrix(x) else x)
-    } else {
-        if (is.null(dim(mat))) mat <- as.matrix(mat)
+        mat <- lapply(mat, function(x) if(is.null(dim(x))) as.data.frame(x) else x)
     }
-    #if (!is.list(mat)) mat <- as.data.frame(mat)
-    framename <- substr(gsub("[^A-Za-z0-9_-]","", match.call()[-1]),1,30)
     write.xlsx(
         mat,
         fina,
@@ -227,37 +300,6 @@ showxls <- function(mat, filename=NA) {
     )
     # show directly if no filename given
     if (is.na(filename)) system(paste ("localc" ,fina), ignore.stdout=T, ignore.stderr=T, wait=F)
-}
-
-#' env2xls
-#'
-#' export everything from environment. showxls can do that. This is depricated.
-#' @export
-env2xls <- function (envir, filename=NA) {
-    warning("env2xls is deprecated, use showxls() instead.")
-    showxls(envir, filename)
-}
-
-#' list2xls
-#'
-#' export a list of this as XLS with each item in a spereate sheet
-#' @export
-list2xls <- function (dflist, filename=NA) {
-    require(openxlsx)
-    stopifnot(is(dflist, "list"))
-    fina <- ifelse(is.character(filename), filename, paste(tempfile(),".xlsx",sep=""))
-    write.xlsx(
-        dflist, 
-        fina, 
-        rowNames=TRUE, 
-        firstRow=TRUE,
-        colNames=TRUE,
-        firstCol=TRUE,
-        colWidths="auto",
-        headerStyle=createStyle(textDecoration="bold"),
-        sep="|"
-    )
-    if (is.na(filename)) void<-capture.output(system(paste ("localc" ,fina)))
 }
 
 #' list2table
@@ -281,10 +323,10 @@ list2table <- function(x) {
 #' list2matrix
 #'
 #' create a matrix from a list of vectors (even with different lengths)
-#' each list in one column but items will be alligned by content to create 
+#' each list in one column but items will be alligned by content to create
 #' a feature-matrix. Sym can be NA (items will be used as they are)
 #' or a string (such es "X" or "🗸")
-#' 
+#'
 #' @export
 list2matrix <- function(lst, sym=NA) {
     # schnappt sich aus jedem vektor der liste die einträge und wurschtelt das in ne Matrix um
@@ -336,7 +378,7 @@ strcompare <- function(x, y, motif=F) {
 
 #' getmatches
 #'
-#' get all regex-matches from a list of strings. 
+#' get all regex-matches from a list of strings.
 #' e.g.: unlist(getmatches("rs[0-9{3,16}", book)) will return all rs-ids from a
 #  text
 #'
@@ -348,5 +390,5 @@ getmatches <- function(pattern, txt) {
             substr(txt[i], m[[i]], m[[i]] + attr(m[[i]], "match.length") - 1)
         }
     }))
-    
+
 }

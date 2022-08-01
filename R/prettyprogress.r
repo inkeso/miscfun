@@ -253,9 +253,11 @@ ppbar <- setRefClass("ppbar",
 #'
 #' lapply & sapply für multicor mit automatischer (pretty)progress-bar.
 #' @export
-plapply <- function(X, FUN, ..., mc.cores = getOption("mc.cores", 4L),
+
+#plapply <- function(X, FUN, ..., mc.cores = getOption("mc.cores", 4L),
+plapply <- function(X, FUN, ..., mc.cores = 1,
                        max.vector.size = getOption("max.vector.size", 1024L),
-                       mc.progress="simple") {
+                       mc.progress="small") {
 
     if (!is.vector(X) || is.object(X)) X <- as.list(X)
     stopifnot(length(X) > 0)
@@ -347,9 +349,11 @@ plapply <- function(X, FUN, ..., mc.cores = getOption("mc.cores", 4L),
 #'
 #' lapply & sapply für multicor mit automatischer (pretty)progress-bar.
 #' @export
-psapply <- function (X, FUN, ..., simplify=TRUE, USE.NAMES=TRUE, mc.cores=getOption("mc.cores", 4L),
+
+# psapply <- function (X, FUN, ..., simplify=TRUE, USE.NAMES=TRUE, mc.cores=getOption("mc.cores", 4L),
+psapply <- function (X, FUN, ..., simplify=TRUE, USE.NAMES=TRUE, mc.cores=1,
                        max.vector.size = getOption("max.vector.size", 1024L),
-                       mc.progress="simple") {
+                       mc.progress="small") {
     FUN <- match.fun(FUN)
     answer <- plapply(X = X, FUN = FUN, ..., mc.cores=mc.cores, max.vector.size=max.vector.size, mc.progress=mc.progress)
     if (USE.NAMES && is.character(X) && is.null(names(answer))) 
