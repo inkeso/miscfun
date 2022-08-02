@@ -8,9 +8,9 @@ plapply(
   X,
   FUN,
   ...,
-  mc.cores = getOption("mc.cores", 4L),
+  mc.cores = 1,
   max.vector.size = getOption("max.vector.size", 1024L),
-  mc.progress = "simple"
+  mc.progress = "small"
 )
 }
 \description{

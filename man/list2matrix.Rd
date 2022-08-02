@@ -8,7 +8,7 @@ list2matrix(lst, sym = NA)
 }
 \description{
 create a matrix from a list of vectors (even with different lengths)
-each list in one column but items will be alligned by content to create 
+each list in one column but items will be alligned by content to create
 a feature-matrix. Sym can be NA (items will be used as they are)
 or a string (such es "X" or "🗸")
 }

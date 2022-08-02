@@ -4,8 +4,13 @@
 \alias{lf}
 \title{lf}
 \usage{
-lf()
+lf(withsize = FALSE)
+}
+\arguments{
+\item{withsize}{If TRUE, approximate size of each object in memory is displayed.
+Be aware that this may take some time and create overhead in RAM if there
+are large objects in the global environment.}
 }
 \description{
-List content of current workspace
+List content of current global environment
 }

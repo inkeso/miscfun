@@ -7,8 +7,9 @@
 showxls(mat, filename = NA)
 }
 \arguments{
-\item{mat}{This may be a single object (anything that may be coerced to matrix). It will be exportet as a single-sheet-XLS.
-Or it may be an environment. In this case, every object will be exportet as a single sheet in the resulting XLS.}
+\item{mat}{This may be:
+- a single object (anything that may be coerced to a data frame). It will be exportet as a single-sheet-XLSX.
+- an environment or list. Every object in the list which can be coerced to a data.frame will be exportet as a single sheet in the resulting XLSX.}
 
 \item{filename}{Write to this file. If 'NA', it will be a tempfile() and directly opend in localc.}
 }

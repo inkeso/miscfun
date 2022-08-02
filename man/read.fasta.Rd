@@ -6,6 +6,11 @@
 \usage{
 read.fasta(file, to.upper = FALSE)
 }
+\arguments{
+\item{file}{file to read}
+
+\item{to.upper}{convert everthing in input to upper case}
+}
 \description{
 read FASTA-File
 }

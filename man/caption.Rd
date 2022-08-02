@@ -2,10 +2,20 @@
 % Please edit documentation in R/misc.r
 \name{caption}
 \alias{caption}
-\title{captio}
+\title{caption}
 \usage{
 caption(txt, color = "1;37", ulchar = "▔", ulcolor = "31")
 }
+\arguments{
+\item{txt}{Text to display as caption.}
+
+\item{color}{ANSI color code for caption.}
+
+\item{ulchar}{Character for underlining caption.
+Should be exactly 1 character or "" or NULL or NA for no underline.}
+
+\item{ulcolor}{ANSI color code for underline.}
+}
 \description{
-display string as caption (underlined)
+display string as caption (maybe underlined)
 }

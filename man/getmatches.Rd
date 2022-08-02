@@ -7,6 +7,6 @@
 getmatches(pattern, txt)
 }
 \description{
-get all regex-matches from a list of strings. 
+get all regex-matches from a list of strings.
 e.g.: unlist(getmatches("rs[0-9{3,16}", book)) will return all rs-ids from a
 }

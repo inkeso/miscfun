@@ -7,7 +7,7 @@
 read(input, data.table = T, ...)
 }
 \arguments{
-\item{input}{Filename to read. May start with 'http:/', 'https://' or 'ftp://'. 
+\item{input}{Filename to read. May start with 'http:/', 'https://' or 'ftp://'.
 If the file is a (compressed) textfile it will be downloaded, decompressed and read on-the-fly without using tempfiles.
 If it's an xlsx-workbook, it will be downloaded to a tempfile, then read.}
 
