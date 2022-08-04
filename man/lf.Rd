@@ -4,12 +4,16 @@
 \alias{lf}
 \title{lf}
 \usage{
-lf(withsize = FALSE)
+lf(withsize = FALSE, concise = FALSE, datafirst = FALSE)
 }
 \arguments{
 \item{withsize}{If TRUE, approximate size of each object in memory is displayed.
 Be aware that this may take some time and create overhead in RAM if there
 are large objects in the global environment.}
+
+\item{concise}{If TRUE, headings will be omited; output will be about 6 lines less.}
+
+\item{datafirst}{If TRUE, objects are listed first, then functions.}
 }
 \description{
 List content of current global environment

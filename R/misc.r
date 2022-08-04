@@ -44,8 +44,14 @@ cls <- function(hard=F) {
 #'   Be aware that this may take some time and create overhead in RAM if there
 #'   are large objects in the global environment.
 #'
+#' @param concise
+#'   If TRUE, headings will be omited; output will be about 6 lines less.
+#'
+#' @param datafirst
+#'   If TRUE, objects are listed first, then functions.
+#'
 #' @export
-lf <- function(withsize=FALSE) {
+lf <- function(withsize=FALSE, concise=FALSE, datafirst=FALSE) {
     if (withsize) {
         # This may be very slow and create lots of overhead in RAM
         dat <- gdata::ll(".GlobalEnv",digits=1, dim=T, sort=T)
@@ -54,9 +60,9 @@ lf <- function(withsize=FALSE) {
         if (length(obj) > 0) {
             dat <- data.frame(
                 row.names=obj,
-                Class=sapply(obj, \(.){ class(get(.))[1] }),
+                Class=sapply(obj, function(.){ class(get(.))[1] }),
                 KB=NA,
-                Dim=sapply(obj, \(.){
+                Dim=sapply(obj, function(.){
                     d <- dim(get(.))
                     if (is.null(d)) d <- length(get(.))
                     paste(d, collapse=" x ")
@@ -68,31 +74,52 @@ lf <- function(withsize=FALSE) {
     }
     dat_fn <- dat[dat$Class=="function",]
     dat_dt <- dat[dat$Class!="function" & rownames(dat)!="ppbarenv",]
-    if (nrow(dat_fn) > 0) {
-        caption("Functions", ulcolor=32)
-        for (item in rownames(dat_fn)) {
-            if (is.function(get(item))) {
-                para <- gsub("^function \\(|\\)  $","",capture.output(str(get(item), give.attr=F)))
-                #    neu = function(z, y=list(),a="b , f", c=17, d=matrix(), æ){}
-                # testcase fails and it's a bit inconsistent but it's better than nothing.
-                para <- gsub("([^ ,]+)(,| = ([^ ]+))? ", "\033[97m\\1\033[33m\\2 ", para)
-                cat("\033[92m",item,"\033[39m(\033[33m",para,"\033[39m)\n", sep="")
+
+    print_func <- function(pren=F) {
+        if (nrow(dat_fn) > 0) {
+            if (pren) cat("\n")
+            if (!concise) caption("Functions", ulcolor=32)
+            for (item in rownames(dat_fn)) {
+                if (is.function(get(item))) {
+                    para <- gsub("^function \\(|\\)  $","",capture.output(str(get(item), give.attr=F)))
+                    #    neu = function(z, y=list(),a="b , f", c=17, d=matrix(), æ){}
+                    # testcase fails and it's a bit inconsistent but it's better than nothing.
+                    para <- gsub("([^ ,]+)(,| = ([^ ]+))? ", "\033[97m\\1\033[33m\\2 ", para)
+                    cat("\033[92m",item,"\033[39m(\033[33m",para,"\033[39m)\n", sep="")
+                }
             }
+            invisible(TRUE)
+        } else {
+            invisible(FALSE)
         }
-        cat("\n")
     }
-    if (nrow(dat_dt) > 0) {
-        caption("Data",ulcolor=32)
-        dcl <- capture.output(print(dat_dt[, if (withsize) c(1,3,2) else c(1,3)]))
-        # highlight!
-        dcl <- sub("^([^ ]+) ", "\033[97m\\1\033[39m ", dcl) # all names
-        dcl[1] <- paste("\033[97m",dcl[1],"\033[39m", sep="") # heading
-        dcl <- sub(" (data.(frame|table)|matrix|array) ", " \033[36m\\1\033[39m ",dcl)
-        dcl <- sub(" (list) ",                            " \033[35m\\1\033[39m ",dcl)
-        dcl <- sub(" (environment) ",                     " \033[31m\\1\033[39m ",dcl)
-        dcl <- sub(" (numeric|character|logical) ",       " \033[33m\\1\033[39m ",dcl)
-        dcl <- sub(" (factor) ",                          " \033[1;33m\\1\033[39m ",dcl)
-        cat(dcl,sep="\n")
+    print_data <- function(pren=F) {
+        if (nrow(dat_dt) > 0) {
+            if (pren) cat("\n")
+            if (!concise) caption("Data",ulcolor=32)
+            dcl <- capture.output(print(dat_dt[, if (withsize) c(1,3,2) else c(1,3)]))
+            if (concise) dcl <- dcl[-1]
+            # highlight!
+            dcl <- sub("^([^ ]+) ", "\033[97m\\1\033[39m ", dcl) # all names
+            dcl <- sub(" ([0-9 .x]+)$",  " \033[38;5;247m\\1\033[39m ",dcl) # dimensions or size
+            dcl[1] <- paste("\033[97m",dcl[1],"\033[39m", sep="") # heading
+            dcl <- sub(" (data.(frame|table)|matrix|array) ",   " \033[36m\\1\033[39m ",dcl)
+            dcl <- sub(" (list) ",                              " \033[35m\\1\033[39m ",dcl)
+            dcl <- sub(" (environment) ",                       " \033[31m\\1\033[39m ",dcl)
+            dcl <- sub(" (numeric|logical|integer) ",           " \033[93m\\1\033[39m ",dcl)
+            dcl <- sub(" (factor|character) ",                  " \033[33m\\1\033[39m ",dcl)
+            cat(dcl,sep="\n")
+            invisible(TRUE)
+        } else {
+            invisible(FALSE)
+        }
+    }
+    if (datafirst) {
+        print_data()
+        print_func(T)
+    } else {
+        print_func()
+        print_data(T)
     }
 }
 
