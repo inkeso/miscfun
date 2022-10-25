@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# R meets tmux.
+# Makes only sense with custom prompt which writes the object-listing to a file.
+
+# in .Rprofile source prompt.r
+# see https://github.com/inkeso/miscfun/blob/master/prompt.r
+
+# TODO: can we probably hook into an existing R-process and get things directly
+# from its session without (mis)using the prompt?
+# ---> research R IPC
+
+
+# path to custom readline-hack, see https://github.com/lincheney/fzf-tab-completion#readline
+FZFRL="$HOME/.local/share/fzf-readline/librl_custom_function.so"
+
+# assign random filename
+RND=$(tr -dc A-Za-z0-9 </dev/urandom | head -c8)
+VARFILE="/tmp/Rvars-$RND"
+
+# filewatcher-script (because "watch cat $VARFILE" sucks)
+sidecmd() {
+    FI="$1"         # our file
+    stty -echo      # hide keypresses
+    echo -en "\ec"  # clear screen
+    nop() { true; } # do nothing, successfully
+    trap nop SIGINT # don‘t abort on ctrl-c
+
+    if ! command -v inotifywait >/dev/null ; then
+        echo -e "\e[91minotifywait not found.
+\e[97mplease install inotify-tools
+\e[mfalling back to polling (once per second)
+\e[90mstarting in 3 seconds\e[m"
+        sleep 3
+        inotifywait() {
+            sleep 1
+        }
+    fi
+
+    while true; do
+        if [ ! -e "$FI" ] ; then 
+            printf "\e[HWaiting for existence:\n$FI\e[J"
+            inotifywait -e create "$(dirname "$FI")" >/dev/null 2>&1
+        else
+            printf "\e[H\e[3J" # home cursor, clear scrollback
+            # start each line with colorcode and end with colorreset and clear-line
+            cat "$FI" | sed "s/^/[48;5;17m/" | sed "s/$/[J[m/"
+            # clear rest of screen with background-color and reset color
+            printf "\e[48;5;17m\e[J\e[m"
+            # wait for filechanges
+            inotifywait -e close_write "$FI" >/dev/null 2>&1
+        fi
+    done
+}
+
+# when called with parameter just do the sidebar
+if [ -n "$1" ] ; then 
+    sidecmd "$1"
+    exit
+fi
+
+# main fun: split current window, execute filewatcher in new pane and R in first one
+do_both() {
+    tmux split-window -d -h -l 20% "$0 \"$VARFILE\""
+    clear # not strictly needed, but i like it neat.
+    [ -e "$FZFRL" ] && export LD_PRELOAD="$FZFRL"
+    R --quiet --args "$VARFILE"
+    rm "$VARFILE"
+    pkill -f "$0 $VARFILE"  # killing SIDECMD
+}
+
+if [ -z "$TMUX" ] ; then # not in tmux: restart self in a new session
+    tmux new-session "$0"
+else
+    do_both
+fi
+

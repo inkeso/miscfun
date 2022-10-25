@@ -4,7 +4,12 @@
 \alias{lf}
 \title{lf}
 \usage{
-lf(withsize = FALSE, concise = FALSE, datafirst = FALSE)
+lf(
+  withsize = FALSE,
+  concise = FALSE,
+  datafirst = FALSE,
+  maxwidth = getOption("width")
+)
 }
 \arguments{
 \item{withsize}{If TRUE, approximate size of each object in memory is displayed.

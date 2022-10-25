@@ -51,7 +51,7 @@ cls <- function(hard=F) {
 #'   If TRUE, objects are listed first, then functions.
 #'
 #' @export
-lf <- function(withsize=FALSE, concise=FALSE, datafirst=FALSE) {
+lf <- function(withsize=FALSE, concise=FALSE, datafirst=FALSE, maxwidth=getOption("width")) {
     if (withsize) {
         # This may be very slow and create lots of overhead in RAM
         dat <- gdata::ll(".GlobalEnv",digits=1, dim=T, sort=T)
@@ -76,6 +76,7 @@ lf <- function(withsize=FALSE, concise=FALSE, datafirst=FALSE) {
     dat_dt <- dat[dat$Class!="function" & rownames(dat)!="ppbarenv",]
 
     print_func <- function(pren=F) {
+        # TODO: Implement maxwidth
         if (nrow(dat_fn) > 0) {
             if (pren) cat("\n")
             if (!concise) caption("Functions", ulcolor=32)
@@ -94,6 +95,7 @@ lf <- function(withsize=FALSE, concise=FALSE, datafirst=FALSE) {
         }
     }
     print_data <- function(pren=F) {
+        # TODO: Implement maxwidth
         if (nrow(dat_dt) > 0) {
             if (pren) cat("\n")
             if (!concise) caption("Data",ulcolor=32)
@@ -115,11 +117,11 @@ lf <- function(withsize=FALSE, concise=FALSE, datafirst=FALSE) {
         }
     }
     if (datafirst) {
-        print_data()
-        print_func(T)
+        hasdat <- print_data()
+        print_func(hasdat)
     } else {
-        print_func()
-        print_data(T)
+        hasfun <- print_func()
+        print_data(hasfun)
     }
 }
 
