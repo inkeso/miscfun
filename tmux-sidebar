@@ -18,6 +18,11 @@ FZFRL="$HOME/.local/share/fzf-readline/librl_custom_function.so"
 RND=$(tr -dc A-Za-z0-9 </dev/urandom | head -c8)
 VARFILE="/tmp/Rvars-$RND"
 
+#SIDEWIDTH="20%"
+#SIDEWIDTH="35"
+SIDEWIDTH=$(( $(tput cols) / 5 ))
+[ $SIDEWIDTH -lt 32 ] && SIDEWIDTH=32
+
 # filewatcher-script (because "watch cat $VARFILE" sucks)
 sidecmd() {
     FI="$1"         # our file
@@ -53,25 +58,28 @@ sidecmd() {
     done
 }
 
-# when called with parameter just do the sidebar
-if [ -n "$1" ] ; then 
+# when called with a plausible and existing varfile, do the sidebar
+# otherwise, pass arguments to R
+if [[ $# -eq 1 && "$1" =~ "/tmp/Rvars-" && -f "$1" ]] ; then
     sidecmd "$1"
     exit
 fi
 
-# main fun: split current window, execute filewatcher in new pane and R in first one
-do_both() {
-    tmux split-window -d -h -l 20% "$0 \"$VARFILE\""
-    clear # not strictly needed, but i like it neat.
-    [ -e "$FZFRL" ] && export LD_PRELOAD="$FZFRL"
-    R --quiet --args "$VARFILE"
-    rm "$VARFILE"
-    pkill -f "$0 $VARFILE"  # killing SIDECMD
-}
+SOLOSESSION="R-Session"
 
-if [ -z "$TMUX" ] ; then # not in tmux: restart self in a new session
-    tmux new-session "$0"
-else
-    do_both
+if [ -z "$TMUX" ] ; then    # not in tmux: restart self in a new session (or reattach)
+    if ! tmux has-session -t "$SOLOSESSION" 2>/dev/null ; then
+        tmux new-session -s "$SOLOSESSION" "$0 $(echo $@)" \; set-option -t "$SOLOSESSION:1" window-active-style none
+    else
+        tmux attach -t "$SOLOSESSION"
+    fi
+else    # main fun: execute filewatcher in new pane and R in first one
+    touch "$VARFILE"
+    tmux split-window -d -h -l "$SIDEWIDTH" "$0 \"$VARFILE\""
+    clear    # not strictly needed, but i like it neat.
+    [ -e "$FZFRL" ] && export LD_PRELOAD="$FZFRL"
+    R $@ --args "$VARFILE"
+    rm "$VARFILE"
+    pkill -f "$0 $VARFILE"    # killing sidecmd
 fi
 
