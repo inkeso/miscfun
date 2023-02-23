@@ -118,14 +118,17 @@
     } else {
         options(width=prwidth)
         # box containing environment is completely part of the prompt.
-        if (.prompt_env$below) {
-            envansi <- sprintf("\n%s",.cc(capture.output(envbox <- .prompt_env$boxen_bello())))
+        if (is.na(.prompt_env$below)) {
+            envansi <- ''
         } else {
-            envansi <- .cc(capture.output(envbox <- .prompt_env$boxen_topf()))
+            if (.prompt_env$below) {
+                envansi <- sprintf("\n%s",.cc(capture.output(envbox <- .prompt_env$boxen_bello())))
+            } else {
+                envansi <- .cc(capture.output(envbox <- .prompt_env$boxen_topf()))
+            }
+            options(width=prwidth - envbox[1] - 1)
         }
-        options(width=prwidth - envbox[1] - 1)
     }
-    
     
     # try calculating execution time.
     if (!is.na(val) && val > 1) {
@@ -167,8 +170,15 @@
 .prompt_env$last[] <- NA_real_
 #.prompt_env$pid <- Sys.getpid()
 
-# hihi, config
-.prompt_env$below <- TRUE
+# For displaying global environment in a box. 
+# If --args <filename> is set, it will be written to file (for displaying it externally).
+# Otherwise:
+
+.prompt_env$below <- NA	    # Not shown
+#.prompt_env$below <- TRUE   # show below prompt
+#.prompt_env$below <- FALSE  # show on top right
+
+# data, then functions when TRUE, functions then data when FALSE
 .prompt_env$datafirst <- TRUE
 
 options(prompt="▶ ", continue="▏ ", error=.prompt_env$error_hook)

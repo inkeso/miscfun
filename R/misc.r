@@ -299,11 +299,11 @@ write.fasta <- function (sq, file, wrap=80, to.upper=FALSE) {
 showxls <- function(mat, filename=NA) {
     fina <- ifelse(is.character(filename), filename, paste(tempfile(),".xlsx",sep=""))
     require(openxlsx)
+    framename <- make.unique(substr(gsub("[^A-Za-z0-9_-]","_", match.call()[2]),1,30))
     if (is.data.frame(mat)) {
-        framename <- make.unique(substr(gsub("[^A-Za-z0-9_-]","_", match.call()[2]),1,30))
+        # this fine
     } else if (is.matrix(mat)) {
         mat <- as.data.frame(mat)
-        framename <- make.unique(substr(gsub("[^A-Za-z0-9_-]","_", match.call()[2]),1,30))
     } else if (is.environment(mat) || is.list(mat)) {
         mat <- as.list(mat)
         framename <- names(mat)
@@ -314,6 +314,12 @@ showxls <- function(mat, filename=NA) {
         # filter functions
         mat <- mat[!sapply(mat, function(x) any(c("refObject", "function") %in% is(x)))]
         mat <- lapply(mat, function(x) if(is.null(dim(x))) as.data.frame(x) else x)
+    } else if (is.vector(mat)) {
+        mat <- data.frame(mat)
+        colnames(mat) <- framename
+    } else {
+        mat <- data.frame(capture.output(print(mat)))
+        colnames(mat) <- framename
     }
     write.xlsx(
         mat,
