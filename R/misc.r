@@ -152,6 +152,7 @@ rc <- function() {
 #'
 #' @param input
 #'   Filename to read. May start with 'http:/', 'https://' or 'ftp://'.
+#'   For local files, wildcard-expansion (globbing) is done (See Sys.glob)
 #'   If the file is a (compressed) textfile it will be downloaded, decompressed and read on-the-fly without using tempfiles.
 #'   If it's an xlsx-workbook, it will be downloaded to a tempfile, then read.
 #'
@@ -162,8 +163,9 @@ rc <- function() {
 read <- function(input, data.table=T, ...) {
     suppressPackageStartupMessages(require(data.table))
     suppressPackageStartupMessages(require(fst))
-    stopifnot(length(input) == 1)
     stopifnot(is(input, "character"))
+    stopifnot(length(input) == 1)
+    
     # list of known decompressors, must accept -d and output to stream.
     # fread is able to read gz and bz2 directly, but it decompresses to a tempfile.
     # using streams is way better.
@@ -180,6 +182,12 @@ read <- function(input, data.table=T, ...) {
         input <- sprintf('wget -q --show-progress -O- "%s"', input)
         remote <- TRUE
         iscmd <- TRUE
+    } else {    # Auto-globbing
+        if (!file.exists(input) && grepl("[*?[]", input)) {
+            globinput <- Sys.glob(input)
+            if (length(globinput) == 1) input <- globinput
+            if (length(globinput) > 1) stop(paste(c("ambiguous glob:", globinput), collapse="\n"))
+        }
     }
 
     if (extension %in% names(DECOMP)) {
@@ -328,7 +336,7 @@ showxls <- function(mat, filename=NA) {
         firstRow=TRUE,
         colNames=TRUE,
         firstCol=TRUE,
-        colWidths="auto",
+        colWidths=ifelse(is.list(mat),NA,"auto"),       # this is a bug in openxlsx
         sheetName=framename,
         headerStyle=createStyle(textDecoration="bold"),
         sep="|"
