@@ -174,7 +174,6 @@ read <- function(input, data.table=T, ...) {
     if (.checkSysBin("pigz")) DECOMP["gz"] <- "pigz"
     if (.checkSysBin("pixz")) DECOMP["xz"] <- "pixz"
     if (.checkSysBin("pbzip2")) DECOMP["bz2"] <- "pbzip2"
-    extension <- last(unlist(strsplit(input, ".", fix=T)))
 
     iscmd <- FALSE
     remote <- FALSE
@@ -190,6 +189,7 @@ read <- function(input, data.table=T, ...) {
         }
     }
 
+    extension <- last(unlist(strsplit(input, ".", fix=T)))
     if (extension %in% names(DECOMP)) {
         if (remote)
             input <- sprintf("%s | %s -d", input, DECOMP[extension])
