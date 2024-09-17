@@ -35,6 +35,28 @@ cls <- function(hard=F) {
     system(if (hard) "reset" else "clear")
 }
 
+#' libs
+#'
+#' load multiple packages without startup messages but with colorfull progress
+#'
+#' @param pkg
+#'   character vector containing package-names to load
+#'
+#' @export
+libs <- function(pkg) {
+    cat("Loading Packages:\033[90m", paste(pkg), "\r\033[97mLoading Packages:")
+    for (p in pkg) {
+        tryCatch({
+            suppressPackageStartupMessages(library(p, char=T, warn=F, quiet=T))
+            cat("\033[0;36m", p)
+        }, error=function(e) {
+            cat("\033[0;31m", p)
+        })
+        flush.console()
+    }
+    cat("\033[m  \n")
+}
+
 #' lf
 #'
 #' List content of current global environment
@@ -145,7 +167,7 @@ rc <- function() {
 #'
 #' automagically read tables to data.frame or data.table (default).
 #' Can read textfiles (csv) and compressed textfiles (bz2, xz, gzip) (using data.table::fread)
-#' Can read fst-files (package fst) and Rds.
+#' Can read fst-files (package fst), qs-files (package qs) and Rds.
 #' Can also read xlsx-workbooks (using openxlsx::read.xlsx).
 #' Will read directly from http(s), ftp.
 #' Download and decompression is done via pipes, not temporary files (except for xlsx-workbooks).
@@ -200,6 +222,10 @@ read <- function(input, data.table=T, ...) {
 
     if (toupper(extension) == "FST") {
         return(read_fst(input, as.data.table=data.table))
+    }
+
+    if (toupper(extension) == "QS") {
+        return(qs::qread(input))
     }
 
     if (toupper(extension) == "RDS") {

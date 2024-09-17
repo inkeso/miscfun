@@ -8,6 +8,7 @@ read(input, data.table = T, ...)
 }
 \arguments{
 \item{input}{Filename to read. May start with 'http:/', 'https://' or 'ftp://'.
+For local files, wildcard-expansion (globbing) is done (See Sys.glob)
 If the file is a (compressed) textfile it will be downloaded, decompressed and read on-the-fly without using tempfiles.
 If it's an xlsx-workbook, it will be downloaded to a tempfile, then read.}
 
@@ -16,7 +17,7 @@ If it's an xlsx-workbook, it will be downloaded to a tempfile, then read.}
 \description{
 automagically read tables to data.frame or data.table (default).
 Can read textfiles (csv) and compressed textfiles (bz2, xz, gzip) (using data.table::fread)
-Can read fst-files (package fst) and Rds.
+Can read fst-files (package fst), qs-files (package qs) and Rds.
 Can also read xlsx-workbooks (using openxlsx::read.xlsx).
 Will read directly from http(s), ftp.
 Download and decompression is done via pipes, not temporary files (except for xlsx-workbooks).
