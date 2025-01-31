@@ -356,7 +356,7 @@ groupdiff <- function(dat, grp1, grp2, p=0.001, wtest="ttest") {
         calcPvalue <- function(x) {
             x1 <- x[grp1]
             x2 <- x[grp2]
-            fv = c(sum(x1), sum(!x1), sum(x2), sum(!x2))
+            fv = c(sum(x1, na.rm=T), sum(!x1, na.rm=T), sum(x2, na.rm=T), sum(!x2, na.rm=T))
             fishtab <<- rbind(fishtab,fv)
             f <- matrix(fv, nrow=2)
             if (sum(f[1,])>0 && sum(f[2,])>0) {

@@ -44,17 +44,29 @@ cls <- function(hard=F) {
 #'
 #' @export
 libs <- function(pkg) {
-    cat("Loading Packages:\033[90m", paste(pkg), "\r\033[97mLoading Packages:")
-    for (p in pkg) {
-        tryCatch({
-            suppressPackageStartupMessages(library(p, char=T, warn=F, quiet=T))
-            cat("\033[0;36m", p)
-        }, error=function(e) {
-            cat("\033[0;31m", p)
-        })
-        flush.console()
+    # this may linebreak. It should not. But we still want all the names.
+    strtstr <- "\033[97mLoading Packages:\033[0m"
+    contstr <- "\033[97m                |\033[0m"
+    strtwidth <- 18     # nchar(strtstr)+1 but without ANSI-escapes
+    liblines <- strsplit(strwrap(paste(pkg, collapse=" "), getOption("width")-strtwidth), " ")
+    
+    for (ll in 1:length(liblines)) {
+        cat(ifelse(ll == 1, strtstr, contstr), liblines[[ll]],"\n")
     }
-    cat("\033[m  \n")
+    cat(sprintf("\033[%dA\033[%dG", length(liblines), strtwidth))
+    for (ll in 1:length(liblines)) {
+        for (p in liblines[[ll]]) {
+            tryCatch({
+                suppressPackageStartupMessages(library(p, char=T, warn=F, quiet=T))
+                cat("\033[0;36m", p)
+            }, error=function(e) {
+                cat("\033[0;31m", p)
+            })
+            flush.console()
+        }
+        cat(sprintf("\n\033[%dG", strtwidth))
+    }
+    cat("\033[0m\r")
 }
 
 #' lf
@@ -82,11 +94,11 @@ lf <- function(withsize=FALSE, concise=FALSE, datafirst=FALSE, maxwidth=getOptio
         if (length(obj) > 0) {
             dat <- data.frame(
                 row.names=obj,
-                Class=sapply(obj, function(.){ class(get(.))[1] }),
+                Class=sapply(obj, function(x){ class(get(x))[1] }),
                 KB=NA,
-                Dim=sapply(obj, function(.){
-                    d <- dim(get(.))
-                    if (is.null(d)) d <- length(get(.))
+                Dim=sapply(obj, function(x){
+                    d <- dim(get(x))
+                    if (is.null(d)) d <- length(get(x))
                     paste(d, collapse=" x ")
                 })
             )
@@ -359,10 +371,10 @@ showxls <- function(mat, filename=NA) {
         mat,
         fina,
         rowNames=TRUE,
-        firstRow=TRUE,
+        firstRow=FALSE,
         colNames=TRUE,
-        firstCol=TRUE,
-        colWidths=ifelse(is.list(mat),NA,"auto"),       # this is a bug in openxlsx
+        firstCol=FALSE,
+        #colWidths=ifelse(is.list(mat),NA,"auto"),
         sheetName=framename,
         headerStyle=createStyle(textDecoration="bold"),
         sep="|"
